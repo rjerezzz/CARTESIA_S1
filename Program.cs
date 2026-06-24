@@ -1,4 +1,6 @@
-﻿void private_trip()
+﻿//Falta guardar el viaje en el historial, eso será en develop si
+
+string private_trip()
 {
 
 
@@ -16,7 +18,9 @@
 
     (int selected_consumption, string selected_gas) = selectCarType();
     double totalConsumption = distance * selected_consumption;
-    double totalCost = totalConsumption * ;
+    double totalCost = get_trip_cost(totalConsumption, selected_gas.ToLower());
+
+    return $"El costo aproximado de su viaje es de C$ {totalCost}.";
 
 
 }
@@ -203,18 +207,21 @@ double road_factor(double d)
 double get_trip_cost(double consumption, string gas)
 {
     const double DIESEL = 43.21;
-    const double GASOLINA = 48.98;
+    const double GASOLINE = 48.98;
 
     if (gas == "diesel")
     {
         return consumption * DIESEL;
     }
-    else if (gas == "gasolina")
+    else if (gas == "gasoline")
     {
-        return consumption * GASOLINA;
+        return consumption * GASOLINE;
     }
     else
     {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Problema al calcular el costo del viaje.");
+        Console.ResetColor();
         return 0;
     }
 }
