@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CARTESIA")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+997192d767c79955869203f819893b396b4f6e06")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+81d61e03e5999d1c92929f456aad308a9c711420")]
 [assembly: System.Reflection.AssemblyProductAttribute("CARTESIA")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CARTESIA")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

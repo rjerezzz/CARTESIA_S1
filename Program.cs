@@ -1,47 +1,9 @@
 ﻿void private_trip()
 {
-    var carTypes;
+
 
     Console.WriteLine("=== CÁLCULO DE VIAJE EN VEHÍCULO PRIVADO ===\n");
 
-    for (int i = 0; i < carTypes.Count; i++)
-    {
-        Console.WriteLine($"{i + 1}. {carTypes[i].Tipo}");
-    }
-
-    Console.WriteLine();
-    Console.WriteLine("Seleccione la categoría de su vehículo:");
-
-    bool valid = false;
-    int op = 0;
-
-    do
-    {
-        Console.Write("Opción: ");
-
-        if (int.TryParse(Console.ReadLine(), out op))
-        {
-            if (op >= 1 && op <= carTypes.Count)
-            {
-                valid = true;
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("La opción seleccionada no existe. Intente nuevamente.");
-                Console.ResetColor();
-            }
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Debe ingresar un número válido.");
-            Console.ResetColor();
-        }
-
-    } while (!valid);
-
-    var selectedCar = carTypes[op - 1];
 
     Console.WriteLine("\nSeleccione su lugar de origen:");
 
@@ -51,6 +13,10 @@
 
     double distance = haversine(originLat, originLon, destLat, destLon);
     distance = road_factor(distance);
+
+    (int selected_consumption, string selected_gas) = selectCarType();
+    double totalConsumption = distance * selected_consumption;
+    double totalCost = totalConsumption * ;
 
 
 }
@@ -136,6 +102,61 @@ Dictionary<string, Dictionary<string, double>> ReadPlacesFile()
     return (originLat, originLon);
 }
 
+(int, string) selectCarType()
+{
+
+    var carTypes = new List<(string Tipo, string Combustible, int Consumo)>
+    {
+        ("Sedan", "Gasoline", 45),
+        ("Camioneta", "Diesel", 36),
+        ("Microbus", "Diesel", 31),
+        ("SUV", "Gasoline", 35),
+        ("Camion", "Diesel", 18),
+        ("Moto", "Gasoline", 120),
+        ("Mototaxi", "Gasoline", 70)
+    };
+
+    for (int i = 0; i < carTypes.Count; i++)
+    {
+        Console.WriteLine($"{i + 1}. {carTypes[i].Tipo}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Seleccione la categoría de su vehículo:");
+
+    bool valid = false;
+    int op = 0;
+
+    do
+    {
+        Console.Write("Opción: ");
+
+        if (int.TryParse(Console.ReadLine(), out op))
+        {
+            if (op >= 1 && op <= carTypes.Count)
+            {
+                valid = true;
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("La opción seleccionada no existe. Intente nuevamente.");
+                Console.ResetColor();
+            }
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Debe ingresar un número válido.");
+            Console.ResetColor();
+        }
+
+    } while (!valid);
+
+    return (carTypes[op - 1].Consumo, carTypes[op - 1].Combustible);
+
+}
+
 double haversine(double lat1, double lon1, double lat2, double lon2)
 {
     double to_radians(double data)
@@ -176,5 +197,24 @@ double road_factor(double d)
     else
     {
         return 1.15;
+    }
+}
+
+double get_trip_cost(double consumption, string gas)
+{
+    const double DIESEL = 43.21;
+    const double GASOLINA = 48.98;
+
+    if (gas == "diesel")
+    {
+        return consumption * DIESEL;
+    }
+    else if (gas == "gasolina")
+    {
+        return consumption * GASOLINA;
+    }
+    else
+    {
+        return 0;
     }
 }
