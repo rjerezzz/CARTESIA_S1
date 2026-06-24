@@ -25,6 +25,44 @@ string private_trip()
 
 }
 
+void budget_trip()
+{
+
+    double ask_budget()
+    {
+        bool valido = false;
+        double budget = 0.0;
+        do
+        {
+            Console.Write("Ingrese su presupuesto en cordobas: ");
+            if (double.TryParse(Console.ReadLine(), out budget))
+            {
+                valido = true;
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Entrada invalida. Intente de nuevo");
+                Console.ResetColor();
+            }
+        } while (!valido);
+        return budget;
+    }
+
+    double budget = ask_budget();
+    var places = ReadPlacesFile();
+    var (Lat, Lon) = SelectPlace(places);
+    (int selected_consumption, string selected_gas) = selectCarType();
+    double gas_price = get_gas_price(selected_gas);
+
+    double max_distance = budget * selected_consumption / gas_price;
+
+    //Continuará sienddo desarrollada en develop dado que necesita historial
+    Console.WriteLine($"La distancia máxima que puede recorrer es: {max_distance} km");
+
+
+}
+
 
 Dictionary<string, Dictionary<string, double>> ReadPlacesFile()
 {
@@ -206,21 +244,28 @@ double road_factor(double d)
 
 double get_trip_cost(double consumption, string gas)
 {
+
+    double price = get_gas_price(gas);
+    return consumption * price;
+}
+
+double get_gas_price(string gas)
+{
     const double DIESEL = 43.21;
     const double GASOLINE = 48.98;
 
     if (gas == "diesel")
     {
-        return consumption * DIESEL;
+        return DIESEL;
     }
     else if (gas == "gasoline")
     {
-        return consumption * GASOLINE;
+        return GASOLINE;
     }
     else
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Problema al calcular el costo del viaje.");
+        Console.WriteLine("Problema al obtener precio de gasolina.");
         Console.ResetColor();
         return 0;
     }
