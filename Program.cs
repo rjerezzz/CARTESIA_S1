@@ -86,3 +86,37 @@
     double originLat = places[placeNames[op - 1]]["lat"];
     double originLon = places[placeNames[op - 1]]["lon"];
 }
+
+Dictionary<string, Dictionary<string, double>> ReadPlacesFile()
+{
+    string[] placeLines = File.ReadAllLines("ubicaciones.txt");
+
+    var places = new Dictionary<string, Dictionary<string, double>>();
+
+    for (int i = 1; i < placeLines.Length; i++)
+    {
+        string[] separated = placeLines[i].Split(',');
+
+        string name = separated[0];
+
+        try
+        {
+            double lat = double.Parse(separated[1]);
+            double lon = double.Parse(separated[2]);
+
+            places[name] = new Dictionary<string, double>
+            {
+                { "lat", lat },
+                { "lon", lon }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"No fue posible procesar la línea {i}: {ex.Message}");
+            Console.ResetColor();
+        }
+    }
+
+    return places;
+}
