@@ -49,6 +49,9 @@
     var (originLat, originLon) = SelectPlace(places);
     var (destLat, destLon) = SelectPlace(places);
 
+    double distance = haversine(originLat, originLon, destLat, destLon);
+
+
 }
 
 
@@ -130,4 +133,31 @@ Dictionary<string, Dictionary<string, double>> ReadPlacesFile()
     double originLon = places[placeNames[op - 1]]["lon"];
 
     return (originLat, originLon);
+}
+
+double haversine(double lat1, double lon1, double lat2, double lon2)
+{
+    double to_radians(double data)
+    {
+        return data * Math.PI / 180.0;
+    }
+
+    const double EARTH_RADIUS = 6371.0;
+    lat1 = to_radians(lat1);
+    lon1 = to_radians(lon1);
+    lat2 = to_radians(lat2);
+    lon2 = to_radians(lon2);
+
+    double dlat = lat2 - lat1;
+    double dlon = lon2 - lon1;
+
+    double a =
+        Math.Pow(Math.Sin(dlat / 2), 2) +
+        Math.Cos(lat1) *
+        Math.Cos(lat2) *
+        Math.Pow(Math.Sin(dlon / 2), 2);
+
+    double c = 2 * Math.Asin(Math.Sqrt(a));
+    return EARTH_RADIUS * c;
+
 }
