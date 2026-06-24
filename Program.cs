@@ -50,6 +50,7 @@
     var (destLat, destLon) = SelectPlace(places);
 
     double distance = haversine(originLat, originLon, destLat, destLon);
+    distance = road_factor(distance);
 
 
 }
@@ -160,4 +161,20 @@ double haversine(double lat1, double lon1, double lat2, double lon2)
     double c = 2 * Math.Asin(Math.Sqrt(a));
     return EARTH_RADIUS * c;
 
+}
+
+double road_factor(double d)
+{
+    if (d < 5)
+    {
+        return 1.3;
+    }
+    else if (d < 20)
+    {
+        return 1.2;
+    }
+    else
+    {
+        return 1.15;
+    }
 }
