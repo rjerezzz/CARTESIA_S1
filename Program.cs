@@ -1,10 +1,4 @@
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 string rutaArchivo = "ubicaciones.txt";
 string rutaHistorial = "historial.txt";
@@ -14,8 +8,13 @@ const int MAX_UBICACIONES = 100;
 Ubicacion[] ubicaciones = new Ubicacion[MAX_UBICACIONES];
 int totalUbicaciones = 0;
 
-cargarUbicaciones();
-await mostrarMenuPrincipal();
+await Main();
+
+async Task Main()
+{
+    cargarUbicaciones();
+    await mostrarMenuPrincipal();
+}
 
 async Task mostrarMenuPrincipal()
 {
@@ -30,8 +29,7 @@ async Task mostrarMenuPrincipal()
         Console.WriteLine("3. Transporte Público");
         Console.WriteLine("4. Simulador Presupuesto");
         Console.WriteLine("5. Historial");
-        Console.WriteLine("6. Estadísticas");
-        Console.WriteLine("7. Salir");
+        Console.WriteLine("6. Salir");
 
         Console.Write("\nIngrese su opción: ");
 
@@ -55,7 +53,7 @@ async Task mostrarMenuPrincipal()
                 break;
 
             case 3:
-                Console.WriteLine("Transporte Público");
+                public_transport();
                 break;
 
             case 4:
@@ -67,10 +65,6 @@ async Task mostrarMenuPrincipal()
                 break;
 
             case 6:
-                Console.WriteLine("Estadísticas");
-                break;
-
-            case 7:
                 Console.WriteLine("Saliendo del programa...");
                 break;
 
@@ -163,12 +157,15 @@ string private_trip()
 
     var places = ReadPlacesFile();
     var (originLat, originLon, originName) = SelectPlace(places);
+    if (originName == "") return "Volviendo al menú anterior...";
     var (destLat, destLon, destName) = SelectPlace(places);
+    if (destName == "") return "Volviendo al menú anterior...";
 
     double distance = haversine(originLat, originLon, destLat, destLon);
     distance = road_factor(distance);
 
     (int selected_consumption, string selected_gas) = selectCarType();
+    if (selected_consumption == 0) return "Volviendo al menú anterior...";
     double totalConsumption = distance * selected_consumption;
     double totalCost = get_trip_cost(totalConsumption, selected_gas.ToLower());
 
@@ -221,7 +218,9 @@ void budget_trip()
     double budget = ask_budget();
     var places = ReadPlacesFile();
     var (Lat, Lon, place) = SelectPlace(places);
+    if (place == "") return;
     (int selected_consumption, string selected_gas) = selectCarType();
+    if (selected_consumption == 0) return;
     double gas_price = get_gas_price(selected_gas);
 
     double max_distance = budget * selected_consumption / gas_price;
@@ -229,12 +228,14 @@ void budget_trip()
     string[] valid_options = new string[ubicaciones.Length];
     string largest = "";
     double largest_d = 0;
-    for (int i = 0; i < ubicaciones.Length; i++)
+    for (int i = 0; i < totalUbicaciones; i++)
     {
-        if (ubicaciones[i].latitud >= Lat && ubicaciones[i].longitud >= Lon)
+        double distance = haversine(Lat, Lon, ubicaciones[i].latitud, ubicaciones[i].longitud);
+        distance = road_factor(distance);
+        if (distance <= max_distance)
         {
             valid_options[i] = ubicaciones[i].nombre;
-            double distance = haversine(Lat, Lon, ubicaciones[i].latitud, ubicaciones[i].longitud);
+
             if (distance > largest_d)
             {
                 largest_d = distance;
@@ -321,9 +322,10 @@ int mostrarSubmenuAgregar()
         Console.WriteLine("\n--- Agregar Ubicación ---");
         Console.WriteLine("1. Buscar ubicación");
         Console.WriteLine("2. Agregar manualmente");
+        Console.WriteLine("3. Volver");
         Console.Write("Seleccione una opción: ");
 
-        if (int.TryParse(Console.ReadLine(), out opcion) && opcion >= 1 && opcion <= 2)
+        if (int.TryParse(Console.ReadLine(), out opcion) && opcion >= 1 && opcion <= 3)
         {
             valido = true;
         }
@@ -392,6 +394,7 @@ string ingresarNombreUbicacion()
 {
     double lat, lon;
     bool valido = false;
+    Console.WriteLine("Puede revisar las coordenadas de su ubicación en el siguiente enlace: https://www.latlong.net/");
 
     do
     {
@@ -569,6 +572,7 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
     {
         Console.WriteLine($"{i + 1}. {carTypes[i].Tipo}");
     }
+    Console.WriteLine("0. Volver");
 
     Console.WriteLine();
     Console.WriteLine("Seleccione la categoría de su vehículo:");
@@ -582,6 +586,7 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
 
         if (int.TryParse(Console.ReadLine(), out op))
         {
+            if (op == 0) return (0, "");
             if (op >= 1 && op <= carTypes.Count)
             {
                 valid = true;
@@ -637,15 +642,15 @@ double road_factor(double d)
 {
     if (d < 5)
     {
-        return 1.3;
+        return d * 1.3;
     }
     else if (d < 20)
     {
-        return 1.2;
+        return d * 1.2;
     }
     else
     {
-        return 1.15;
+        return d * 1.15;
     }
 }
 
@@ -701,12 +706,17 @@ List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
         {
             Console.WriteLine($"{i + 1}. {places[i].nombre}");
         }
+        Console.WriteLine("0. Volver");
 
         Console.Write("Seleccione una opción: ");
 
         if (int.TryParse(Console.ReadLine(), out opcion) && opcion >= 1 && opcion <= places.Count)
         {
             valido = true;
+        }
+        else if (opcion == 0)
+        {
+            return (0, 0, "");
         }
         else
         {
@@ -818,8 +828,10 @@ void public_transport()
 
     Console.WriteLine("Seleccione su lugar de origen:\n");
     string origin = ask_parada(paradas);
+    if (origin == "") return;
     Console.WriteLine("\nSeleccione su lugar de destino:\n");
     string destination = ask_parada(paradas);
+    if (destination == "") return;
 
     Console.WriteLine();
     if (search_ruta_directa(resultados, origin, destination))
@@ -870,17 +882,17 @@ void public_transport()
                                 if (nombre2 == transbordo)
                                 {
                                     encontramosTransbordo = true;
-                                    break;
+                                }
+                                if (encontramosTransbordo && nombre2 == destination)
+                                {
+                                    Console.WriteLine($"Ruta 1: {ruta1.Name}");
+                                    Console.WriteLine($"Bajarse en: {transbordo}");
+                                    Console.WriteLine($"Tomar Ruta 2: {ruta2.Name}");
+                                    Console.WriteLine($"Destino: {destination}");
+                                    return true;
                                 }
                             }
-                            if (encontramosTransbordo && nombre == destination)
-                            {
-                                Console.WriteLine($"Ruta 1: {ruta1.Name}");
-                                Console.WriteLine($"Bajarse en: {transbordo}");
-                                Console.WriteLine($"Tomar Ruta 2: {ruta2.Name}");
-                                Console.WriteLine($"Destino: {destination}");
-                                return true;
-                            }
+
                         }
                     }
                 }
@@ -934,15 +946,17 @@ void public_transport()
         {
             Console.WriteLine($"{i + 1}. {paradas[i]}");
         }
+        Console.WriteLine("0. Volver");
 
         bool valid = false;
         int index = 0;
 
         do
         {
-            Console.Write("Ingrese el número de la parada de origen: ");
+            Console.Write("Ingrese el número de la parada: ");
             if (int.TryParse(Console.ReadLine(), out index))
             {
+                if (index == 0) return "";
                 if (index >= 1 && index <= paradas.Count)
                 {
                     valid = true;

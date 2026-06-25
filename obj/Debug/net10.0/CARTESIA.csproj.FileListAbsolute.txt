@@ -13,3 +13,8 @@ C:\Users\jerez\Downloads\Final Project\CARTESIA\obj\Debug\net10.0\refint\CARTESI
 C:\Users\jerez\Downloads\Final Project\CARTESIA\obj\Debug\net10.0\CARTESIA.pdb
 C:\Users\jerez\Downloads\Final Project\CARTESIA\obj\Debug\net10.0\CARTESIA.genruntimeconfig.cache
 C:\Users\jerez\Downloads\Final Project\CARTESIA\obj\Debug\net10.0\ref\CARTESIA.dll
+C:\Users\jerez\Downloads\Final Project\CARTESIA\build-check\CARTESIA.exe
+C:\Users\jerez\Downloads\Final Project\CARTESIA\build-check\CARTESIA.deps.json
+C:\Users\jerez\Downloads\Final Project\CARTESIA\build-check\CARTESIA.runtimeconfig.json
+C:\Users\jerez\Downloads\Final Project\CARTESIA\build-check\CARTESIA.dll
+C:\Users\jerez\Downloads\Final Project\CARTESIA\build-check\CARTESIA.pdb
