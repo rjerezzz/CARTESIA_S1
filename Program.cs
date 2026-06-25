@@ -7,13 +7,80 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 string rutaArchivo = "ubicaciones.txt";
+string rutaHistorial = "historial.txt";
 
 const int MAX_UBICACIONES = 100;
 Ubicacion[] ubicaciones = new Ubicacion[MAX_UBICACIONES];
 int totalUbicaciones = 0;
 
 cargarUbicaciones();
-await administrarUbicaciones();
+await mostrarMenuPrincipal();
+
+async Task mostrarMenuPrincipal()
+{
+    int opcion;
+
+    do
+    {
+        Console.Clear();
+
+        Console.WriteLine("1. Administrar ubicaciones");
+        Console.WriteLine("2. Calcular Viaje Privado");
+        Console.WriteLine("3. Transporte Público");
+        Console.WriteLine("4. Simulador Presupuesto");
+        Console.WriteLine("5. Historial");
+        Console.WriteLine("6. Estadísticas");
+        Console.WriteLine("7. Salir");
+
+        Console.Write("\nIngrese su opción: ");
+
+        if (!int.TryParse(Console.ReadLine(), out opcion))
+        {
+            Console.WriteLine("Opción inválida.");
+            Console.ReadKey();
+            continue;
+        }
+
+        Console.WriteLine();
+
+        switch (opcion)
+        {
+            case 1:
+                await administrarUbicaciones();
+                break;
+
+            case 2:
+                Console.WriteLine(private_trip());
+                break;
+
+            case 3:
+                Console.WriteLine("Transporte Público");
+                break;
+
+            case 4:
+                budget_trip();
+                break;
+
+            case 5:
+                mostrarHistorial();
+                break;
+
+            case 6:
+                Console.WriteLine("Estadísticas");
+                break;
+
+            case 7:
+                Console.WriteLine("Saliendo del programa...");
+                break;
+
+            default:
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Opción no válida.");
+                Console.ResetColor();
+                break;
+        }
+    } while (opcion != 7);
+}
 
 async Task administrarUbicaciones()
 {
@@ -68,6 +135,7 @@ int mostrarSubmenu()
 
     return opcion;
 }
+
 void mostrarArregloUbicaciones()
 {
     Console.WriteLine("\n--- Ubicaciones Registradas ---");
@@ -80,13 +148,13 @@ void mostrarArregloUbicaciones()
 
     for (int i = 0; i < totalUbicaciones; i++)
     {
-        Console.WriteLine($"{i + 1}. Nombre: {ubicaciones[i].nombre} | Latitud: {ubicaciones[i].latitud} | Longitud: {ubicaciones[i].longitud}");
+        Console.WriteLine($"{i + 1}. Nombre: {ubicaciones[i].nombre}");
     }
-﻿//Falta guardar el viaje en el historial, eso será en develop si
+}
 
+//Falta guardar el viaje en el historial, eso será en develop si
 string private_trip()
 {
-
 
     Console.WriteLine("=== CÁLCULO DE VIAJE EN VEHÍCULO PRIVADO ===\n");
 
@@ -156,6 +224,7 @@ bool validarCoordenadas(double lat, double lon)
 
     return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
 }
+
 void guardarUbicacionEnArchivo(string nombre, double lat, double lon)
 {
     using StreamWriter archivo = new StreamWriter(rutaArchivo, append: true);
@@ -232,7 +301,6 @@ int mostrarSubmenuAgregar()
     return opcion;
 }
 
-<<<<<<< HEAD
 void agregarUbicacionManual()
 {
     if (totalUbicaciones >= MAX_UBICACIONES)
@@ -415,7 +483,29 @@ async Task buscarUbicacionPorApi()
         if (int.TryParse(Console.ReadLine(), out seleccion) && seleccion >= 1 && seleccion <= lugaresEncontrados.Count)
         {
             seleccionValida = true;
-=======
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Opción inválida. Intente nuevamente.");
+            Console.ResetColor();
+        }
+    } while (!seleccionValida);
+
+    var elegido = lugaresEncontrados[seleccion - 1];
+
+    ubicaciones[totalUbicaciones].nombre = elegido.nombre;
+    ubicaciones[totalUbicaciones].latitud = elegido.lat;
+    ubicaciones[totalUbicaciones].longitud = elegido.lng;
+    totalUbicaciones++;
+
+    guardarUbicacionEnArchivo(elegido.nombre, elegido.lat, elegido.lng);
+
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("Ubicación agregada correctamente desde la búsqueda.");
+    Console.ResetColor();
+}
+
 (int, string) selectCarType()
 {
 
@@ -457,186 +547,10 @@ async Task buscarUbicacionPorApi()
                 Console.WriteLine("La opción seleccionada no existe. Intente nuevamente.");
                 Console.ResetColor();
             }
->>>>>>> jerez
         }
         else
         {
             Console.ForegroundColor = ConsoleColor.Red;
-<<<<<<< HEAD
-            Console.WriteLine("Opción inválida. Intente nuevamente.");
-            Console.ResetColor();
-        }
-    } while (!seleccionValida);
-
-    var elegido = lugaresEncontrados[seleccion - 1];
-
-    ubicaciones[totalUbicaciones].nombre = elegido.nombre;
-    ubicaciones[totalUbicaciones].latitud = elegido.lat;
-    ubicaciones[totalUbicaciones].longitud = elegido.lng;
-    totalUbicaciones++;
-
-    guardarUbicacionEnArchivo(elegido.nombre, elegido.lat, elegido.lng);
-
-    Console.ForegroundColor = ConsoleColor.Green;
-    Console.WriteLine("Ubicación agregada correctamente desde la búsqueda.");
-    Console.ResetColor();
-}
-
-// Módulo "Mostrar historial"
-
-string rutaHistorial = "historial.txt";
-
-// Inicio -> Abrir historial.txt -> Hay registros?
-//   Si -> Mostrar registros -> FIN
-//   No -> Mostrar mensaje -> FIN
-void mostrarHistorial()
-{
-    // Abrir historial.txt
-    if (!File.Exists(rutaHistorial))
-    {
-        // No hay registros (el archivo ni siquiera existe todavía)
-        mostrarMensajeSinHistorial();
-        return; // FIN
-    }
-
-    List<string> registros = leerRegistrosHistorial();
-
-    // Hay registros?
-    if (registros.Count > 0)
-    {
-        // Sí -> Mostrar registros
-        mostrarRegistrosHistorial(registros);
-    }
-    else
-    {
-        // No -> Mostrar mensaje
-        mostrarMensajeSinHistorial();
-    }
-    // FIN
-}
-
-// Lee historial.txt con StreamReader y devuelve cada línea no vacía
-// como un registro.
-List<string> leerRegistrosHistorial()
-{
-    var registros = new List<string>();
-
-    StreamReader lector = new StreamReader(rutaHistorial);
-    string? linea;
-
-    while ((linea = lector.ReadLine()) != null)
-    {
-        if (!string.IsNullOrWhiteSpace(linea))
-        {
-            registros.Add(linea);
-        }
-    }
-
-    lector.Close();
-
-    return registros;
-}
-
-// Rama "Sí": Mostrar registros
-void mostrarRegistrosHistorial(List<string> registros)
-{
-    Console.WriteLine("\n--- Historial ---");
-    for (int i = 0; i < registros.Count; i++)
-    {
-        Console.WriteLine($"{i + 1}. {registros[i]}");
-    }
-}
-
-// Rama "No": Mostrar mensaje
-void mostrarMensajeSinHistorial()
-{
-    Console.WriteLine("No hay registros en el historial.");
-}
-struct Ubicacion
-{
-    public string nombre;
-    public double latitud;
-    public double longitud;
-
-
-
-
-
-
-    class Program
-    {
-        static void Main()
-        {
-            int opcion;
-
-            do
-            {
-                Console.Clear();
-
-                Console.WriteLine("1. Administrar ubicaciones");
-                Console.WriteLine("2. Calcular Viaje Privado");
-                Console.WriteLine("3. Transporte Público");
-                Console.WriteLine("4. Simulador Presupuesto");
-                Console.WriteLine("5. Historial");
-                Console.WriteLine("6. Estadísticas");
-                Console.WriteLine("7. Salir");
-
-                Console.Write("\nIngrese su opción: ");
-
-                if (!int.TryParse(Console.ReadLine(), out opcion))
-                {
-                    Console.WriteLine("Opción inválida.");
-                    Console.ReadKey();
-                    continue;
-                }
-
-                Console.WriteLine();
-
-                switch (opcion)
-                {
-                    case 1:
-                        Console.WriteLine("Administrar ubicaciones");
-                        break;
-
-                    case 2:
-                        Console.WriteLine("Calcular Viaje Privado");
-                        break;
-
-                    case 3:
-                        Console.WriteLine("Transporte Público");
-                        break;
-
-                    case 4:
-                        Console.WriteLine("Simulador Presupuesto");
-                        break;
-
-                    case 5:
-                        Console.WriteLine("Historial");
-                        break;
-
-                    case 6:
-                        Console.WriteLine("Estadísticas");
-                        break;
-
-                    case 7:
-                        Console.WriteLine("Saliendo del programa...");
-                        break;
-
-                    default:
-                        Console.WriteLine("Opción no válida.");
-                        break;
-                }
-
-                if (opcion != 7)
-                {
-                    Console.WriteLine("\nPresione una tecla para continuar...");
-                    Console.ReadKey();
-                }
-
-            } while (opcion != 7);
-        }
-    }
-=======
             Console.WriteLine("Debe ingresar un número válido.");
             Console.ResetColor();
         }
@@ -718,4 +632,120 @@ double get_gas_price(string gas)
         return 0;
     }
 }
->>>>>>> jerez
+
+List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
+{
+    var places = new List<(string nombre, double latitud, double longitud)>();
+
+    for (int i = 0; i < totalUbicaciones; i++)
+    {
+        places.Add((ubicaciones[i].nombre, ubicaciones[i].latitud, ubicaciones[i].longitud));
+    }
+
+    return places;
+}
+
+(double latitud, double longitud) SelectPlace(List<(string nombre, double latitud, double longitud)> places)
+{
+    int opcion;
+    bool valido = false;
+
+    do
+    {
+        for (int i = 0; i < places.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {places[i].nombre}");
+        }
+
+        Console.Write("Seleccione una opción: ");
+
+        if (int.TryParse(Console.ReadLine(), out opcion) && opcion >= 1 && opcion <= places.Count)
+        {
+            valido = true;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Opción inválida. Intente nuevamente.");
+            Console.ResetColor();
+        }
+    } while (!valido);
+
+    return (places[opcion - 1].latitud, places[opcion - 1].longitud);
+}
+
+// Módulo "Mostrar historial"
+
+// Inicio -> Abrir historial.txt -> Hay registros?
+//   Si -> Mostrar registros -> FIN
+//   No -> Mostrar mensaje -> FIN
+void mostrarHistorial()
+{
+    // Abrir historial.txt
+    if (!File.Exists(rutaHistorial))
+    {
+        // No hay registros (el archivo ni siquiera existe todavía)
+        mostrarMensajeSinHistorial();
+        return; // FIN
+    }
+
+    List<string> registros = leerRegistrosHistorial();
+
+    // Hay registros?
+    if (registros.Count > 0)
+    {
+        // Sí -> Mostrar registros
+        mostrarRegistrosHistorial(registros);
+    }
+    else
+    {
+        // No -> Mostrar mensaje
+        mostrarMensajeSinHistorial();
+    }
+    // FIN
+}
+
+// Lee historial.txt con StreamReader y devuelve cada línea no vacía
+// como un registro.
+List<string> leerRegistrosHistorial()
+{
+    var registros = new List<string>();
+
+    StreamReader lector = new StreamReader(rutaHistorial);
+    string? linea;
+
+    while ((linea = lector.ReadLine()) != null)
+    {
+        if (!string.IsNullOrWhiteSpace(linea))
+        {
+            registros.Add(linea);
+        }
+    }
+
+    lector.Close();
+
+    return registros;
+}
+
+// Rama "Sí": Mostrar registros
+void mostrarRegistrosHistorial(List<string> registros)
+{
+    Console.WriteLine("\n--- Historial ---");
+    for (int i = 0; i < registros.Count; i++)
+    {
+        Console.WriteLine($"{i + 1}. {registros[i]}");
+    }
+}
+
+// Rama "No": Mostrar mensaje
+void mostrarMensajeSinHistorial()
+{
+    Console.WriteLine("No hay registros en el historial.");
+}
+
+struct Ubicacion
+{
+    public string nombre;
+    public double latitud;
+    public double longitud;
+}
