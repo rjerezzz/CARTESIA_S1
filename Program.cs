@@ -822,9 +822,74 @@ void public_transport()
     string destination = ask_parada(paradas);
 
     Console.WriteLine();
+    if (search_ruta_directa(resultados, origin, destination))
+    {
+        return;
+    }
+    else
+    {
+        bool transbordo_exist = search_transbordo(resultados, origin, destination);
+        if (!transbordo_exist)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("No existe una ruta directa.");
+            Console.ResetColor();
+        }
+    }
 
 
-    void search_ruta(JsonElement resultados, string origin, string destination)
+    bool search_transbordo(JsonElement resultados, string origin, string destination)
+    {
+        foreach (JsonProperty ruta1 in resultados.EnumerateObject())
+        {
+            foreach (JsonElement recorrido in ruta1.Value.EnumerateArray())
+            {
+                bool encontramosOrigen = false;
+                foreach (JsonElement parada in recorrido.GetProperty("stations").EnumerateArray())
+                {
+                    string nombre = parada.GetString();
+                    if (nombre == origin)
+                    {
+                        encontramosOrigen = true;
+                    }
+                    if (!encontramosOrigen)
+                    {
+                        continue;
+                    }
+
+                    string transbordo = nombre;
+
+                    foreach (JsonProperty ruta2 in resultados.EnumerateObject())
+                    {
+                        foreach (JsonElement recorrido2 in ruta2.Value.EnumerateArray())
+                        {
+                            bool encontramosTransbordo = false;
+                            foreach (JsonElement parada2 in recorrido2.GetProperty("stations").EnumerateArray())
+                            {
+                                string nombre2 = parada2.GetString();
+                                if (nombre2 == transbordo)
+                                {
+                                    encontramosTransbordo = true;
+                                    break;
+                                }
+                            }
+                            if (encontramosTransbordo && nombre == destination)
+                            {
+                                Console.WriteLine($"Ruta 1: {ruta1.Name}");
+                                Console.WriteLine($"Bajarse en: {transbordo}");
+                                Console.WriteLine($"Tomar Ruta 2: {ruta2.Name}");
+                                Console.WriteLine($"Destino: {destination}");
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    bool search_ruta_directa(JsonElement resultados, string origin, string destination)
     {
         foreach (JsonProperty ruta in resultados.EnumerateObject())
         {
@@ -849,7 +914,7 @@ void public_transport()
                         Console.WriteLine($"Ruta: {ruta.Name}");
                         Console.WriteLine($"Recorrido: {origin} -> {destination}");
 
-                        return;
+                        return true;
                     }
                 }
             }
@@ -858,6 +923,8 @@ void public_transport()
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("No existe una ruta directa.");
         Console.ResetColor();
+
+        return false;
     }
 
 
