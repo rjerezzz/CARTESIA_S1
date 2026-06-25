@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 string rutaArchivo = "ubicaciones.txt";
 string rutaHistorial = "historial.txt";
+string rutaRutas = "timetable.json";
 
 const int MAX_UBICACIONES = 100;
 Ubicacion[] ubicaciones = new Ubicacion[MAX_UBICACIONES];
@@ -152,7 +153,6 @@ void mostrarArregloUbicaciones()
     }
 }
 
-//Falta guardar el viaje en el historial, eso será en develop si
 string private_trip()
 {
 
@@ -796,6 +796,135 @@ void mostrarRegistrosHistorial(List<string> registros)
 void mostrarMensajeSinHistorial()
 {
     Console.WriteLine("No hay registros en el historial.");
+}
+
+void public_transport()
+{
+    Console.WriteLine("=== MOTOR DE BUSQUEDA DE RUTAS ===\n");
+    string json = File.ReadAllText(rutaRutas);
+    using JsonDocument doc = JsonDocument.Parse(json);
+    var raiz = doc.RootElement;
+
+
+    if (!raiz.TryGetProperty("lines", out var resultados))
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("No se encontraron resultados para esta búsqueda.");
+        Console.ResetColor();
+        return;
+    }
+
+    List<string> paradas = get_paradas(resultados);
+
+    Console.WriteLine("Seleccione su lugar de origen:\n");
+    string origin = ask_parada(paradas);
+    Console.WriteLine("\nSeleccione su lugar de destino:\n");
+    string destination = ask_parada(paradas);
+
+    Console.WriteLine();
+
+
+    void search_ruta(JsonElement resultados, string origin, string destination)
+    {
+        foreach (JsonProperty ruta in resultados.EnumerateObject())
+        {
+            foreach (JsonElement recorrido in ruta.Value.EnumerateArray())
+            {
+                bool encontramosOrigen = false;
+                foreach (JsonElement parada in recorrido.GetProperty("stations").EnumerateArray())
+                {
+                    string nombre = parada.GetString();
+
+                    if (nombre == origin)
+                    {
+                        encontramosOrigen = true;
+                    }
+
+                    if (encontramosOrigen && nombre == destination)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("Ruta encontrada");
+                        Console.ResetColor();
+
+                        Console.WriteLine($"Ruta: {ruta.Name}");
+                        Console.WriteLine($"Recorrido: {origin} -> {destination}");
+
+                        return;
+                    }
+                }
+            }
+        }
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("No existe una ruta directa.");
+        Console.ResetColor();
+    }
+
+
+    string ask_parada(List<string> paradas)
+    {
+        for (int i = 0; i < paradas.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {paradas[i]}");
+        }
+
+        bool valid = false;
+        int index = 0;
+
+        do
+        {
+            Console.Write("Ingrese el número de la parada de origen: ");
+            if (int.TryParse(Console.ReadLine(), out index))
+            {
+                if (index >= 1 && index <= paradas.Count)
+                {
+                    valid = true;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Número de parada inválido.");
+                    Console.ResetColor();
+                }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Número de parada inválido.");
+                Console.ResetColor();
+            }
+
+        } while (!valid);
+
+        return paradas[index - 1];
+    }
+
+    List<string> get_paradas(JsonElement resultados)
+    {
+        List<string> paradas = new();
+
+        foreach (JsonProperty ruta in resultados.EnumerateObject())
+        {
+            foreach (JsonElement recorrido in ruta.Value.EnumerateArray())
+            {
+                foreach (JsonElement parada in recorrido.GetProperty("stations").EnumerateArray())
+                {
+                    string nombreParada = parada.GetString();
+
+                    if (!paradas.Contains(nombreParada))
+                    {
+                        paradas.Add(nombreParada);
+                    }
+                }
+            }
+        }
+
+        return paradas;
+    }
+
+
+
+
 }
 
 struct Ubicacion
