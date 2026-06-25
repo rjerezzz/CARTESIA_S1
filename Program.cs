@@ -374,21 +374,7 @@ async Task buscarUbicacionPorApi()
     Console.ResetColor();
 }
 
-// ===========================================================
 // Módulo "Mostrar historial"
-//
-// Nota: esta función implementa ÚNICAMENTE la lógica del diagrama
-// de flujo que es la parte que me toca hacer osea; (abrir archivo
-// -> verificar si hay registros -> mostrar registros o mensaje -> fin).
-// La interfaz/menú que invoque esta
-// función la integra el compañero encargado de esa parte del
-// proyecto; aquí solo se garantiza que el flujo funcione.
-// al momento de escribir esto, no se ha
-// definido el menú o interfaz que invoque esta función,
-// por lo que no se incluye ningún código relacionado a eso,
-// solo la función mostrarHistorial()
-// y sus funciones auxiliares.
-// ===========================================================
 
 string rutaHistorial = "historial.txt";
 
@@ -463,4 +449,82 @@ struct Ubicacion
     public string nombre;
     public double latitud;
     public double longitud;
-}
+
+
+
+
+
+
+    class Program
+    {
+        static void Main()
+        {
+            int opcion;
+
+            do
+            {
+                Console.Clear();
+
+                Console.WriteLine("1. Administrar ubicaciones");
+                Console.WriteLine("2. Calcular Viaje Privado");
+                Console.WriteLine("3. Transporte Público");
+                Console.WriteLine("4. Simulador Presupuesto");
+                Console.WriteLine("5. Historial");
+                Console.WriteLine("6. Estadísticas");
+                Console.WriteLine("7. Salir");
+
+                Console.Write("\nIngrese su opción: ");
+
+                if (!int.TryParse(Console.ReadLine(), out opcion))
+                {
+                    Console.WriteLine("Opción inválida.");
+                    Console.ReadKey();
+                    continue;
+                }
+
+                Console.WriteLine();
+
+                switch (opcion)
+                {
+                    case 1:
+                        Console.WriteLine("Administrar ubicaciones");
+                        break;
+
+                    case 2:
+                        Console.WriteLine("Calcular Viaje Privado");
+                        break;
+
+                    case 3:
+                        Console.WriteLine("Transporte Público");
+                        break;
+
+                    case 4:
+                        Console.WriteLine("Simulador Presupuesto");
+                        break;
+
+                    case 5:
+                        Console.WriteLine("Historial");
+                        break;
+
+                    case 6:
+                        Console.WriteLine("Estadísticas");
+                        break;
+
+                    case 7:
+                        Console.WriteLine("Saliendo del programa...");
+                        break;
+
+                    default:
+                        Console.WriteLine("Opción no válida.");
+                        break;
+                }
+
+                if (opcion != 7)
+                {
+                    Console.WriteLine("\nPresione una tecla para continuar...");
+                    Console.ReadKey();
+                }
+
+            } while (opcion != 7);
+        }
+    }
