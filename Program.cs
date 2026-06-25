@@ -162,8 +162,8 @@ string private_trip()
     Console.WriteLine("\nSeleccione su lugar de origen:");
 
     var places = ReadPlacesFile();
-    var (originLat, originLon) = SelectPlace(places);
-    var (destLat, destLon) = SelectPlace(places);
+    var (originLat, originLon, originName) = SelectPlace(places);
+    var (destLat, destLon, destName) = SelectPlace(places);
 
     double distance = haversine(originLat, originLon, destLat, destLon);
     distance = road_factor(distance);
@@ -172,8 +172,25 @@ string private_trip()
     double totalConsumption = distance * selected_consumption;
     double totalCost = get_trip_cost(totalConsumption, selected_gas.ToLower());
 
-    return $"El costo aproximado de su viaje es de C$ {totalCost}.";
+    Console.WriteLine($"El costo aproximado de su viaje es de C$ {totalCost}.");
+    bool save = false;
+    Console.WriteLine("Desea guardar este viaje en el historial? (s/n)");
+    string response = Console.ReadLine();
+    if (response.ToLower() == "s")
+    {
+        save = true;
+    }
 
+    if (save)
+    {
+        Console.WriteLine("Guardando viaje en el historial...");
+        guardarViajeEnHistorial(originName, destName, distance, totalCost);
+        return "Viaje guardado en el historial.";
+    }
+    else
+    {
+        return "Viaje no guardado en el historial.";
+    }
 
 }
 
@@ -203,14 +220,34 @@ void budget_trip()
 
     double budget = ask_budget();
     var places = ReadPlacesFile();
-    var (Lat, Lon) = SelectPlace(places);
+    var (Lat, Lon, place) = SelectPlace(places);
     (int selected_consumption, string selected_gas) = selectCarType();
     double gas_price = get_gas_price(selected_gas);
 
     double max_distance = budget * selected_consumption / gas_price;
-
-    //Continuará sienddo desarrollada en develop dado que necesita historial
     Console.WriteLine($"La distancia máxima que puede recorrer es: {max_distance} km");
+    string[] valid_options = new string[ubicaciones.Length];
+    string largest = "";
+    double largest_d = 0;
+    for (int i = 0; i < ubicaciones.Length; i++)
+    {
+        if (ubicaciones[i].latitud >= Lat && ubicaciones[i].longitud >= Lon)
+        {
+            valid_options[i] = ubicaciones[i].nombre;
+            double distance = haversine(Lat, Lon, ubicaciones[i].latitud, ubicaciones[i].longitud);
+            if (distance > largest_d)
+            {
+                largest_d = distance;
+                largest = ubicaciones[i].nombre;
+            }
+        }
+    }
+    Console.WriteLine("\nCon tu presupuesto, puedes visitar los siguientes lugares previamente guardados:\n");
+    foreach (var option in valid_options)
+    {
+        Console.WriteLine(option);
+    }
+    Console.WriteLine($"\nDestino más lejano alcanzable\n {largest} ({largest_d} km)");
 
 
 }
@@ -506,6 +543,14 @@ async Task buscarUbicacionPorApi()
     Console.ResetColor();
 }
 
+void guardarViajeEnHistorial(string origen, string destino, double distancia, double costo)
+{
+    using (StreamWriter sw = new StreamWriter(rutaHistorial, true))
+    {
+        sw.WriteLine($"{origen};{destino};{distancia:F2};{costo:F2}");
+    }
+}
+
 (int, string) selectCarType()
 {
 
@@ -645,7 +690,7 @@ List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
     return places;
 }
 
-(double latitud, double longitud) SelectPlace(List<(string nombre, double latitud, double longitud)> places)
+(double latitud, double longitud, string nombre) SelectPlace(List<(string nombre, double latitud, double longitud)> places)
 {
     int opcion;
     bool valido = false;
@@ -671,7 +716,7 @@ List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
         }
     } while (!valido);
 
-    return (places[opcion - 1].latitud, places[opcion - 1].longitud);
+    return (places[opcion - 1].latitud, places[opcion - 1].longitud, places[opcion - 1].nombre);
 }
 
 // Módulo "Mostrar historial"
@@ -730,10 +775,20 @@ List<string> leerRegistrosHistorial()
 // Rama "Sí": Mostrar registros
 void mostrarRegistrosHistorial(List<string> registros)
 {
-    Console.WriteLine("\n--- Historial ---");
+    Console.WriteLine("\n===== HISTORIAL DE VIAJES =====");
+
     for (int i = 0; i < registros.Count; i++)
     {
-        Console.WriteLine($"{i + 1}. {registros[i]}");
+        string[] datos = registros[i].Split(';');
+
+        if (datos.Length >= 4)
+        {
+            Console.WriteLine($"\nViaje #{i + 1}");
+            Console.WriteLine($"Origen    : {datos[0]}");
+            Console.WriteLine($"Destino   : {datos[1]}");
+            Console.WriteLine($"Distancia : {datos[2]} km");
+            Console.WriteLine($"Costo     : C$ {datos[3]}");
+        }
     }
 }
 
