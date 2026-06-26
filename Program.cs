@@ -25,7 +25,7 @@ async Task mostrarMenuPrincipal()
     do
     {
 
-        Console.WriteLine("=== MENU PRINCIPAL ===\n");
+        Console.WriteLine("\n=== MENU PRINCIPAL ===\n");
         Console.WriteLine("1. Administrar ubicaciones");
         Console.WriteLine("2. Calcular Viaje Privado");
         Console.WriteLine("3. Transporte Público");
@@ -68,6 +68,7 @@ async Task mostrarMenuPrincipal()
 
             case 6:
                 Console.WriteLine("Saliendo del programa...");
+                Console.Clear();
                 return;
 
             default:
@@ -600,7 +601,6 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
             if (op >= 1 && op <= carTypes.Count)
             {
                 valid = true;
-                Console.WriteLine($"Consumo: {carTypes[op - 1].Consumo}");
             }
             else
             {
@@ -617,9 +617,6 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
         }
 
     } while (!valid);
-
-    Console.WriteLine($"op = {op}");
-    Console.WriteLine($"Consumo: {carTypes[op - 1].Consumo}, Combustible: {carTypes[op - 1].Combustible}");
 
     return (carTypes[op - 1].Consumo, carTypes[op - 1].Combustible);
 
@@ -817,7 +814,7 @@ void mostrarRegistrosHistorial(List<string> registros)
             Console.WriteLine($"Origen    : {datos[0]}");
             Console.WriteLine($"Destino   : {datos[1]}");
             Console.WriteLine($"Distancia : {datos[2]} km");
-            Console.WriteLine($"Costo     : C$ {datos[3]}");
+            Console.WriteLine($"Costo     : C$ {datos[3]}\n");
         }
     }
 }
@@ -825,7 +822,7 @@ void mostrarRegistrosHistorial(List<string> registros)
 // Rama "No": Mostrar mensaje
 void mostrarMensajeSinHistorial()
 {
-    Console.WriteLine("No hay registros en el historial.");
+    Console.WriteLine("No hay registros en el historial.\n");
 }
 
 void public_transport()
@@ -922,25 +919,25 @@ void public_transport()
                                 listaParadas2.Add(parada2.GetString());
                             }
 
-                            int indiceTransbordo = -1;
-                            int indiceDestino = -1;
+                            int indexTransbordo = -1;
+                            int indexDestino = -1;
 
                             for (int j = 0; j < listaParadas2.Count; j++)
                             {
                                 if (listaParadas2[j] == puntoTransbordo)
                                 {
-                                    indiceTransbordo = j;
+                                    indexTransbordo = j;
                                 }
                                 if (listaParadas2[j] == destination)
                                 {
-                                    indiceDestino = j;
+                                    indexDestino = j;
                                 }
                             }
 
-                            if (indiceTransbordo != -1 && indiceDestino != -1 && indiceTransbordo < indiceDestino)
+                            if (indexTransbordo != -1 && indexDestino != -1 && indexTransbordo < indexDestino)
                             {
                                 Console.WriteLine("========================================");
-                                Console.WriteLine("¡Ruta con transbordo encontrada!");
+                                Console.WriteLine("¡Ruta con transbordo encontrada:\n");
                                 Console.WriteLine($"1. Sube en: {origin} (Ruta {ruta1.Name})");
                                 Console.WriteLine($"2. Cámbiate en: {puntoTransbordo}");
                                 Console.WriteLine($"3. Toma la Ruta {ruta2.Name} hacia: {destination}");
