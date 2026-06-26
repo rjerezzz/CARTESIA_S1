@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System;
 
 string rutaArchivo = "ubicaciones.txt";
 string rutaHistorial = "historial.txt";
@@ -18,12 +19,13 @@ async Task Main()
 
 async Task mostrarMenuPrincipal()
 {
+    Console.Clear();
     int opcion;
 
     do
     {
-        Console.Clear();
 
+        Console.WriteLine("=== MENU PRINCIPAL ===\n");
         Console.WriteLine("1. Administrar ubicaciones");
         Console.WriteLine("2. Calcular Viaje Privado");
         Console.WriteLine("3. Transporte Público");
@@ -66,7 +68,7 @@ async Task mostrarMenuPrincipal()
 
             case 6:
                 Console.WriteLine("Saliendo del programa...");
-                break;
+                return;
 
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -166,10 +168,15 @@ string private_trip()
 
     (int selected_consumption, string selected_gas) = selectCarType();
     if (selected_consumption == 0) return "Volviendo al menú anterior...";
-    double totalConsumption = distance * selected_consumption;
-    double totalCost = get_trip_cost(totalConsumption, selected_gas.ToLower());
+
+
+    double litros = distance / selected_consumption;
+    double totalCost = get_trip_cost(litros, selected_gas.ToLower());
+    Console.WriteLine();
 
     Console.WriteLine($"El costo aproximado de su viaje es de C$ {totalCost}.");
+
+
     bool save = false;
     Console.WriteLine("Desea guardar este viaje en el historial? (s/n)");
     string response = Console.ReadLine();
@@ -224,7 +231,7 @@ void budget_trip()
     double gas_price = get_gas_price(selected_gas);
 
     double max_distance = budget * selected_consumption / gas_price;
-    Console.WriteLine($"La distancia máxima que puede recorrer es: {max_distance} km");
+    Console.WriteLine($"La distancia máxima que puede recorrer es: {Math.Round(max_distance, 2)} km");
     string[] valid_options = new string[ubicaciones.Length];
     string largest = "";
     double largest_d = 0;
@@ -246,10 +253,12 @@ void budget_trip()
     Console.WriteLine("\nCon tu presupuesto, puedes visitar los siguientes lugares previamente guardados:\n");
     foreach (var option in valid_options)
     {
-        Console.WriteLine(option);
+        if (!string.IsNullOrEmpty(option))
+        {
+            Console.WriteLine(option);
+        }
     }
-    Console.WriteLine($"\nDestino más lejano alcanzable\n {largest} ({largest_d} km)");
-
+    Console.WriteLine($"\nDestino más lejano alcanzable:\n {largest} ({Math.Round(largest_d, 2)} km)\n\n");
 
 }
 
@@ -303,13 +312,130 @@ async Task agregarUbicacionMenu()
     switch (opcion)
     {
         case 1: // Buscar ubicación
-            await buscarUbicacionPorApi();
+            await BuscarUbicacionPorApi();
             break;
 
         case 2: // Agregar manualmente
             agregarUbicacionManual();
             break;
     }
+}
+
+async Task BuscarUbicacionPorApi()
+{
+    if (totalUbicaciones >= MAX_UBICACIONES)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("No se pueden agregar más ubicaciones, el arreglo está lleno.");
+        Console.ResetColor();
+    }
+
+    bool valido = false;
+    string lugar = "";
+    do
+    {
+        Console.Write("Ingresa el nombre del lugar a buscar: ");
+        lugar = Console.ReadLine();
+        if (!string.IsNullOrEmpty(lugar))
+        {
+            valido = true;
+        }
+    } while (!valido);
+
+    var parametros = new Dictionary<string, string>
+    {
+        ["type"] = "search",
+        ["hl"] = "es",
+        ["engine"] = "google_maps",
+        ["api_key"] = "0f623482556b342af3e7117b162e8b72e6dbfbb1c2b50881a6e542bf3897f3d5",
+        ["gl"] = "ni",
+        ["q"] = lugar,
+        ["ll"] = "@12.045,-86.19,11z"
+    };
+
+    using HttpClient client = new();
+
+    string url = "https://serpapi.com/search.json?" +
+                 string.Join("&", parametros.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+
+    string respuesta;
+    try
+    {
+        respuesta = await client.GetStringAsync(url);
+    }
+    catch (HttpRequestException)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("No se pudo conectar con el servicio de búsqueda. Intente más tarde.");
+        Console.ResetColor();
+        return;
+    }
+
+    using JsonDocument doc = JsonDocument.Parse(respuesta);
+    var raiz = doc.RootElement;
+
+    if (!raiz.TryGetProperty("local_results", out var resultados))
+    {
+        Console.WriteLine("No se encontraron resultados para esta búsqueda en la zona.");
+    }
+
+    var lugaresEncontrados = new List<(string nombre, double lat, double lng)>();
+
+    foreach (var negocio in resultados.EnumerateArray().Take(5))
+    {
+        string nombre = negocio.GetProperty("title").GetString();
+
+        if (negocio.TryGetProperty("gps_coordinates", out var gps))
+        {
+            double lat = gps.GetProperty("latitude").GetDouble();
+            double lng = gps.GetProperty("longitude").GetDouble();
+            lugaresEncontrados.Add((nombre, lat, lng));
+        }
+    }
+
+    lugaresEncontrados.RemoveAll(l => !validarCoordenadas(l.lat, l.lng));
+
+    if (lugaresEncontrados.Count == 0)
+    {
+        Console.WriteLine("No se encontraron resultados dentro del área permitida (Managua y Masaya).");
+    }
+
+    Console.WriteLine("\n--- Resultados obtenidos ---");
+    for (int i = 0; i < lugaresEncontrados.Count; i++)
+    {
+        Console.WriteLine($"{i + 1}. {lugaresEncontrados[i].nombre}");
+    }
+
+    int seleccion;
+    bool seleccionValida = false;
+    do
+    {
+        Console.Write("Seleccione el lugar: ");
+        if (int.TryParse(Console.ReadLine(), out seleccion) && seleccion >= 1 && seleccion <= lugaresEncontrados.Count)
+        {
+            seleccionValida = true;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Opción inválida. Intente nuevamente.");
+            Console.ResetColor();
+        }
+    } while (!seleccionValida);
+
+    var elegido = lugaresEncontrados[seleccion - 1];
+
+    ubicaciones[totalUbicaciones].nombre = elegido.nombre;
+    ubicaciones[totalUbicaciones].latitud = elegido.lat;
+    ubicaciones[totalUbicaciones].longitud = elegido.lng;
+    totalUbicaciones++;
+
+    guardarUbicacionEnArchivo(elegido.nombre, elegido.lat, elegido.lng);
+
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("Ubicación agregada correctamente desde la búsqueda.");
+    Console.ResetColor();
+
 }
 
 int mostrarSubmenuAgregar()
@@ -427,124 +553,7 @@ string ingresarNombreUbicacion()
     return (lat, lon);
 }
 
-async Task buscarUbicacionPorApi()
-{
-    if (totalUbicaciones >= MAX_UBICACIONES)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("No se pueden agregar más ubicaciones, el arreglo está lleno.");
-        Console.ResetColor();
-        return;
-    }
 
-    bool valido = false;
-    string lugar = "";
-    do
-    {
-        Console.Write("Ingresa el nombre del lugar a buscar: ");
-        lugar = Console.ReadLine();
-        if (!string.IsNullOrEmpty(lugar))
-        {
-            valido = true;
-        }
-    } while (!valido);
-
-    var parametros = new Dictionary<string, string>
-    {
-        ["type"] = "search",
-        ["hl"] = "es",
-        ["engine"] = "google_maps",
-        ["api_key"] = "0f623482556b342af3e7117b162e8b72e6dbfbb1c2b50881a6e542bf3897f3d5",
-        ["gl"] = "ni",
-        ["q"] = lugar,
-        ["ll"] = "@12.045,-86.19,11z"
-    };
-
-    using HttpClient client = new();
-
-    string url = "https://serpapi.com/search.json?" +
-                 string.Join("&", parametros.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
-
-    string respuesta;
-    try
-    {
-        respuesta = await client.GetStringAsync(url);
-    }
-    catch (HttpRequestException)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("No se pudo conectar con el servicio de búsqueda. Intente más tarde.");
-        Console.ResetColor();
-        return;
-    }
-
-    using JsonDocument doc = JsonDocument.Parse(respuesta);
-    var raiz = doc.RootElement;
-
-    if (!raiz.TryGetProperty("local_results", out var resultados))
-    {
-        Console.WriteLine("No se encontraron resultados para esta búsqueda en la zona.");
-        return;
-    }
-
-    var lugaresEncontrados = new List<(string nombre, double lat, double lng)>();
-
-    foreach (var negocio in resultados.EnumerateArray().Take(5))
-    {
-        string nombre = negocio.GetProperty("title").GetString();
-
-        if (negocio.TryGetProperty("gps_coordinates", out var gps))
-        {
-            double lat = gps.GetProperty("latitude").GetDouble();
-            double lng = gps.GetProperty("longitude").GetDouble();
-            lugaresEncontrados.Add((nombre, lat, lng));
-        }
-    }
-
-    lugaresEncontrados.RemoveAll(l => !validarCoordenadas(l.lat, l.lng));
-
-    if (lugaresEncontrados.Count == 0)
-    {
-        Console.WriteLine("No se encontraron resultados dentro del área permitida (Managua y Masaya).");
-        return;
-    }
-
-    Console.WriteLine("\n--- Resultados obtenidos ---");
-    for (int i = 0; i < lugaresEncontrados.Count; i++)
-    {
-        Console.WriteLine($"{i + 1}. {lugaresEncontrados[i].nombre}");
-    }
-
-    int seleccion;
-    bool seleccionValida = false;
-    do
-    {
-        Console.Write("Seleccione el lugar: ");
-        if (int.TryParse(Console.ReadLine(), out seleccion) && seleccion >= 1 && seleccion <= lugaresEncontrados.Count)
-        {
-            seleccionValida = true;
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Opción inválida. Intente nuevamente.");
-            Console.ResetColor();
-        }
-    } while (!seleccionValida);
-
-    var elegido = lugaresEncontrados[seleccion - 1];
-
-    ubicaciones[totalUbicaciones].nombre = elegido.nombre;
-    ubicaciones[totalUbicaciones].latitud = elegido.lat;
-    ubicaciones[totalUbicaciones].longitud = elegido.lng;
-    totalUbicaciones++;
-
-    guardarUbicacionEnArchivo(elegido.nombre, elegido.lat, elegido.lng);
-
-    Console.ForegroundColor = ConsoleColor.Green;
-    Console.WriteLine("Ubicación agregada correctamente desde la búsqueda.");
-    Console.ResetColor();
-}
 
 void guardarViajeEnHistorial(string origen, string destino, double distancia, double costo)
 {
@@ -557,15 +566,16 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
 (int, string) selectCarType()
 {
 
+    Console.Clear();
     var carTypes = new List<(string Tipo, string Combustible, int Consumo)>
     {
-        ("Sedan", "Gasoline", 45),
-        ("Camioneta", "Diesel", 36),
-        ("Microbus", "Diesel", 31),
-        ("SUV", "Gasoline", 35),
-        ("Camion", "Diesel", 18),
-        ("Moto", "Gasoline", 120),
-        ("Mototaxi", "Gasoline", 70)
+        ("Sedán",      "Gasoline", 14),
+        ("Camioneta",  "Diesel",   10),
+        ("Microbús",   "Diesel",    8),
+        ("SUV",        "Gasoline", 11),
+        ("Camión",     "Diesel",    4),
+        ("Moto",       "Gasoline", 35),
+        ("Mototaxi",   "Gasoline", 28)
     };
 
     for (int i = 0; i < carTypes.Count; i++)
@@ -590,6 +600,7 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
             if (op >= 1 && op <= carTypes.Count)
             {
                 valid = true;
+                Console.WriteLine($"Consumo: {carTypes[op - 1].Consumo}");
             }
             else
             {
@@ -606,6 +617,9 @@ void guardarViajeEnHistorial(string origen, string destino, double distancia, do
         }
 
     } while (!valid);
+
+    Console.WriteLine($"op = {op}");
+    Console.WriteLine($"Consumo: {carTypes[op - 1].Consumo}, Combustible: {carTypes[op - 1].Combustible}");
 
     return (carTypes[op - 1].Consumo, carTypes[op - 1].Combustible);
 
@@ -658,13 +672,14 @@ double get_trip_cost(double consumption, string gas)
 {
 
     double price = get_gas_price(gas);
-    return consumption * price;
+    return Math.Round(consumption * price, 2);
 }
 
 double get_gas_price(string gas)
 {
     const double DIESEL = 43.21;
     const double GASOLINE = 48.98;
+    gas = gas.ToLower();
 
     if (gas == "diesel")
     {
@@ -697,6 +712,7 @@ List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
 
 (double latitud, double longitud, string nombre) SelectPlace(List<(string nombre, double latitud, double longitud)> places)
 {
+    Console.Clear();
     int opcion;
     bool valido = false;
 
@@ -708,15 +724,19 @@ List<(string nombre, double latitud, double longitud)> ReadPlacesFile()
         }
         Console.WriteLine("0. Volver");
 
-        Console.Write("Seleccione una opción: ");
+        Console.Write("\nSeleccione una opción: ");
 
-        if (int.TryParse(Console.ReadLine(), out opcion) && opcion >= 1 && opcion <= places.Count)
+        if (int.TryParse(Console.ReadLine(), out opcion))
         {
-            valido = true;
-        }
-        else if (opcion == 0)
-        {
-            return (0, 0, "");
+            if (opcion == 0)
+            {
+                valido = true;
+                return (0, 0, "");
+            }
+            else if (opcion >= 1 && opcion <= places.Count + 1)
+            {
+                valido = true;
+            }
         }
         else
         {
@@ -844,7 +864,7 @@ void public_transport()
         if (!transbordo_exist)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("No existe una ruta directa.");
+            Console.WriteLine("No existe transbordo.\n\n");
             Console.ResetColor();
         }
     }
@@ -852,47 +872,81 @@ void public_transport()
 
     bool search_transbordo(JsonElement resultados, string origin, string destination)
     {
+        Console.WriteLine($"Buscando transbordo entre {origin} y {destination}...\n");
         foreach (JsonProperty ruta1 in resultados.EnumerateObject())
         {
-            foreach (JsonElement recorrido in ruta1.Value.EnumerateArray())
+            foreach (JsonElement recorrido1 in ruta1.Value.EnumerateArray())
             {
-                bool encontramosOrigen = false;
-                foreach (JsonElement parada in recorrido.GetProperty("stations").EnumerateArray())
+                var listaParadas1 = new List<string>();
+                foreach (JsonElement parada in recorrido1.GetProperty("stations").EnumerateArray())
                 {
-                    string nombre = parada.GetString();
-                    if (nombre == origin)
+                    listaParadas1.Add(parada.GetString());
+                }
+
+                int indexInicio = -1;
+                for (int i = 0; i < listaParadas1.Count; i++)
+                {
+                    if (listaParadas1[i] == origin)
                     {
-                        encontramosOrigen = true;
+                        indexInicio = i;
+                        break;
                     }
-                    if (!encontramosOrigen)
+                }
+
+                if (indexInicio == -1)
+                {
+                    continue;
+                }
+
+                for (int i = indexInicio + 1; i < listaParadas1.Count; i++)
+                {
+                    string puntoTransbordo = listaParadas1[i];
+
+                    if (puntoTransbordo == destination)
                     {
                         continue;
                     }
 
-                    string transbordo = nombre;
-
                     foreach (JsonProperty ruta2 in resultados.EnumerateObject())
                     {
+                        if (ruta1.Name == ruta2.Name)
+                        {
+                            continue;
+                        }
+
                         foreach (JsonElement recorrido2 in ruta2.Value.EnumerateArray())
                         {
-                            bool encontramosTransbordo = false;
+                            var listaParadas2 = new List<string>();
                             foreach (JsonElement parada2 in recorrido2.GetProperty("stations").EnumerateArray())
                             {
-                                string nombre2 = parada2.GetString();
-                                if (nombre2 == transbordo)
+                                listaParadas2.Add(parada2.GetString());
+                            }
+
+                            int indiceTransbordo = -1;
+                            int indiceDestino = -1;
+
+                            for (int j = 0; j < listaParadas2.Count; j++)
+                            {
+                                if (listaParadas2[j] == puntoTransbordo)
                                 {
-                                    encontramosTransbordo = true;
+                                    indiceTransbordo = j;
                                 }
-                                if (encontramosTransbordo && nombre2 == destination)
+                                if (listaParadas2[j] == destination)
                                 {
-                                    Console.WriteLine($"Ruta 1: {ruta1.Name}");
-                                    Console.WriteLine($"Bajarse en: {transbordo}");
-                                    Console.WriteLine($"Tomar Ruta 2: {ruta2.Name}");
-                                    Console.WriteLine($"Destino: {destination}");
-                                    return true;
+                                    indiceDestino = j;
                                 }
                             }
 
+                            if (indiceTransbordo != -1 && indiceDestino != -1 && indiceTransbordo < indiceDestino)
+                            {
+                                Console.WriteLine("========================================");
+                                Console.WriteLine("¡Ruta con transbordo encontrada!");
+                                Console.WriteLine($"1. Sube en: {origin} (Ruta {ruta1.Name})");
+                                Console.WriteLine($"2. Cámbiate en: {puntoTransbordo}");
+                                Console.WriteLine($"3. Toma la Ruta {ruta2.Name} hacia: {destination}");
+                                Console.WriteLine("========================================\n");
+                                return true;
+                            }
                         }
                     }
                 }
@@ -900,6 +954,7 @@ void public_transport()
         }
         return false;
     }
+
 
     bool search_ruta_directa(JsonElement resultados, string origin, string destination)
     {
@@ -924,7 +979,7 @@ void public_transport()
                         Console.ResetColor();
 
                         Console.WriteLine($"Ruta: {ruta.Name}");
-                        Console.WriteLine($"Recorrido: {origin} -> {destination}");
+                        Console.WriteLine($"Recorrido: {origin} -> {destination}\n");
 
                         return true;
                     }
@@ -933,7 +988,7 @@ void public_transport()
         }
 
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("No existe una ruta directa.");
+        Console.WriteLine("No existe una ruta directa.\n");
         Console.ResetColor();
 
         return false;

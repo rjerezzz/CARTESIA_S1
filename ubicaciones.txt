@@ -1,4 +1,4 @@
-Universdidad Casimiro Sotelo;12.1045;-86.2708
+Universidad Casimiro Sotelo;12.1045;-86.2708
 Metrocentro;12.1280;-86.2675
 Mercado Mayoreo;12.1202;-86.2208
 Mercado Huembes;12.1147;-86.2396
@@ -15,3 +15,4 @@ Mercado Masaya;11.9728;-86.0948
 Parque Central Masaya;11.9747;-86.0940
 Catarina;11.9115;-86.0737
 San Juan de Oriente;11.9053;-86.0730
+Colegio Centroamérica;12.098382599999999;-86.26432319999999
