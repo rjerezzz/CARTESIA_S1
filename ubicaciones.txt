@@ -1,0 +1,18 @@
+Universidad Casimiro Sotelo;12.1045;-86.2708
+Metrocentro;12.1280;-86.2675
+Mercado Mayoreo;12.1202;-86.2208
+Mercado Huembes;12.1147;-86.2396
+Plaza Inter;12.1368;-86.2785
+Puerto Salvador Allende;12.1545;-86.2867
+Rotonda Rubén Darío;12.1298;-86.2737
+Galerías Santo Domingo;12.1008;-86.2457
+UNAN Managua;12.1163;-86.2366
+Aeropuerto Internacional;12.1415;-86.1683
+Nindirí;12.0033;-86.1214
+Masaya Centro;11.9744;-86.0942
+Terminal Masaya;11.9725;-86.0958
+Mercado Masaya;11.9728;-86.0948
+Parque Central Masaya;11.9747;-86.0940
+Catarina;11.9115;-86.0737
+San Juan de Oriente;11.9053;-86.0730
+Colegio Centroamérica;12.098382599999999;-86.26432319999999
